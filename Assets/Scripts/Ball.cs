@@ -1,28 +1,37 @@
 using UnityEngine;
-using UnityEngine.WSA;
 
-public class BallController : MonoBehaviour
+public class Ball : MonoBehaviour
 {
     [SerializeField] private float launchSpeed = 10f;
     [SerializeField] private float paddleBounceAngle = 60f;
-    [SerializeField] private float minSpeed = 8f;
-    [SerializeField] private float maxSpeed = 12f;
+    public float minSpeed = 8f;
+    public float maxSpeed = 12f;
 
     PlayerController currentPaddle;
     private Rigidbody2D rb;
     private bool isLaunched = false;
+    Vector3 startPoint;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        if (GameManager.I != null)
+        {
+            GameManager.I.RegisterBall(this);
+        }
+    }
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
         currentPaddle = FindFirstObjectByType<PlayerController>();
+        startPoint = currentPaddle.transform.position;
     }
 
     void Update()
     {
-        if (!isLaunched && currentPaddle) 
+        if (!isLaunched && currentPaddle )
         {
-            transform.position = currentPaddle.transform.position + Vector3.up * 0.5f;
+            transform.position = currentPaddle.transform.position + Vector3.up * 0.4f;
 
             if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
             {
@@ -45,6 +54,13 @@ public class BallController : MonoBehaviour
         rb.linearVelocity = dir * launchSpeed;
     }
 
+    public void ResetBall(PlayerController paddle)
+    {
+        isLaunched = false;
+        transform.position = currentPaddle.transform.position + Vector3.up * 0.4f;
+        currentPaddle.transform.position = startPoint;
+    }
+
     void OnCollisionEnter2D(Collision2D other)
     {
         PlayerController paddle = other.collider.GetComponent<PlayerController>();
@@ -59,5 +75,16 @@ public class BallController : MonoBehaviour
             return;
         }
 
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("deathzone"))
+        {
+            if (GameManager.I != null)
+            {
+                GameManager.I.LoseLife(this);
+            }
+        }
     }
 }
